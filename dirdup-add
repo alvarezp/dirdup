@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import socket
+
+def mkdirs(target):
+	if not os.path.exists(target):
+		os.makedirs(target)
+
+
+def gethostname():
+	hostname=socket.gethostname()
+
+	if "DIRDUP_HOSTNAME" in os.environ:
+		hostname=os.environ["DIRDUP_HOSTNAME"]
+
+	return hostname
+
+
+
+def getworkdir():
+	workdir="./"
+
+	if "DIRDUP_WORKDIR" in os.environ:
+		workdir=os.environ["DIRDUP_WORKDIR"]
+
+	return workdir
+
+
+
+def main(argv):
+	if len(argv) < 3:
+		print("usage: dirdup-add name path")
+		return
+
+	if "--help" in argv:
+		print("usage: dirdup-add name path")
+		return
+
+	hostname=gethostname()
+	workdir=getworkdir()
+
+	seedname, seedpath=argv[1:3]
+
+	mkdirs(workdir + '/accesses/' + hostname + '/' + hostname + '/')
+
+	seedfilepath=workdir + 'accesses/' + hostname + '/' + hostname + '/'
+	seedfilename=seedfilepath + seedname
+
+	if os.path.exists(seedfilename):
+		print("Seed file already exists. Aborting.")
+		return
+
+	with open(seedfilename, 'w') as seedfile:
+		seedfile.write(seedpath) + "\n"
+
+
+main(sys.argv)
+
+
+
+"""
+
+indexes/device/location_name:
+size time hash path/filename
+size time hash path/filename
+size time hash path/filename
+size time hash path/filename
+
+accesses/this_device/remote_device:
+location_name = method, path, [or something]
+
+"""
