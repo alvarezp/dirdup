@@ -148,6 +148,6 @@ for line in sys.stdin.readlines():
 d3 = dupdirs_wholetrees(readdata)
 
 for key in sorted(d3, reverse=True, key=lambda x: sum(e[0] for e in x)):
-	print(d3[key])
+	print(sorted(d3[key]))
 
 
