@@ -27,7 +27,7 @@ def processpairs(pairs):
 #def identicalfiles(data):
 #
 #	pairs=[]
-#	for line in readdata:
+#	for line in data:
 #		pairs.append((line[3], (int(line[0]), int(line[1]), line[2], line[4])));
 #
 #	return processpairs(pairs)
@@ -37,7 +37,7 @@ def processpairs(pairs):
 #	pairs=[]
 #
 #	dirs={}
-#	for line in readdata:
+#	for line in data:
 #		if (line[3] not in dirs):
 #			dirs[line[3]]=[];
 #
@@ -53,7 +53,7 @@ def dupdirs_wholetrees(data):
 	pairs=[]
 
 	dirs={}
-	for line in readdata:
+	for line in data:
 		input_size=line[0]
 		input_time=line[1]
 		input_hash=line[2]
