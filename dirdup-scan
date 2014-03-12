@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import socket
+import hashlib
+
+from os.path import getsize, join
+from functools import partial
+
+def mkdirs(target):
+	if not os.path.exists(target):
+		os.makedirs(target)
+
+
+def gethostname():
+	hostname=socket.gethostname()
+
+	if "DIRDUP_HOSTNAME" in os.environ:
+		hostname=os.environ["DIRDUP_HOSTNAME"]
+
+	return hostname
+
+
+
+def getworkdir():
+	workdir="./"
+
+	if "DIRDUP_WORKDIR" in os.environ:
+		workdir=os.environ["DIRDUP_WORKDIR"]
+
+	return workdir
+
+
+def md5sum(filename):
+	with open(filename, mode='rb') as f:
+		d = hashlib.md5()
+		for buf in iter(partial(f.read, 128), b''):
+			d.update(buf)
+	return d.hexdigest()
+
+
+def main(argv):
+	if len(argv) < 2:
+		print("usage: dirdup-scan path")
+		return
+
+	if "--help" in argv:
+		print("usage: dirdup-scan path")
+		return
+
+	hostname=gethostname()
+	workdir=getworkdir()
+
+	seedname=argv[1]
+
+	seedfilepath=workdir + 'accesses/' + hostname + '/' + hostname + '/'
+	seedfilename=seedfilepath + seedname
+
+	indexfilepath=workdir + 'indexes/' + hostname + '/'
+	indexfilename=indexfilepath + seedname
+
+	if not os.path.exists(seedfilename):
+		print("Seed file already does not exist. Aborting.")
+		return
+
+	with open(seedfilename, 'r', newline="\n") as seedstream:
+		seedpath=seedstream.readline().split('\n')[0].split(':')[1]
+
+	mkdirs(indexfilepath)
+	indexfile=open(indexfilename, 'w')
+
+	for root, dirs, files in os.walk(seedpath):
+		for f in files:
+			fn = root + '/' + f
+			try:
+				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn))
+			except:
+				pass
+
+
+
+main(sys.argv)
+
+
+
+"""
+
+indexes/device/location_name:
+size time hash path/filename
+size time hash path/filename
+size time hash path/filename
+size time hash path/filename
+
+accesses/this_device/remote_device:
+location_name = method, path, [or something]
+
+"""
