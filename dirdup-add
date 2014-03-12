@@ -53,7 +53,7 @@ def main(argv):
 		return
 
 	with open(seedfilename, 'w') as seedfile:
-		seedfile.write(seedpath + "\n")
+		seedfile.write("file:" + seedpath + "\n")
 
 
 main(sys.argv)
