@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import socket
+import hashlib
+import re
+
+from os.path import getsize, join
+from functools import partial
+
+import argparse
+
+def processpairs(pairs):
+	sortedpairs = sorted(pairs, key=lambda x: x[1], reverse=True);
+
+	d={};
+	prev=();
+	for e in sortedpairs:
+		md5=e[1]
+		if md5 != prev:
+			d[md5] = [];
+			d[md5].append(e[0]);
+		if md5 == prev:
+			d[md5].append(e[0]);
+		prev=md5
+
+	d2={}
+	for i in d:
+		if(len(d[i]) > 1):
+			d2[i] = d[i]
+
+	return d2
+
+
+def identicalfiles(data):
+
+	pairs=[]
+	for line in data:
+		pairs.append(((line[5], line[6], line[3]), (int(line[0]), int(line[1]), line[2], line[4])));
+
+	return processpairs(pairs)
+
+
+def dupdirs_wholetrees(data):
+
+	pairs=[]
+
+	dirs={}
+	for line in data:
+		input_size=line[0]
+		input_time=line[1]
+		input_hash=line[2]
+		input_path=line[3]
+		input_file=line[4]
+		input_index=line[5]
+		dir_components=input_path.split('/')
+		path=""
+		for c in dir_components:
+			if c == "":
+				continue
+
+			if c == ".":
+				path="."
+			else:
+				path=path + '/' + c
+
+			if (path not in dirs):
+				dirs[path]=[];
+
+			dirs[path].append((int(input_size), int(input_time), input_hash, input_file))
+
+	for d in dirs:
+		pairs.append((d, tuple(dirs[d])));
+			
+	processedpairs = processpairs(pairs)
+
+	#Clean away cases of directories that only have one subdirectory and
+	#thus they appear to be duplicates.
+	keys_to_pop=[]
+	for p in processedpairs:
+		what_to_remove=[]
+		for d in processedpairs[p]:
+			for e in processedpairs[p]:
+				#print("Testing :" + d + ": against :" + e + ":")
+				if d in e and d != e:
+					#print("True!")
+					what_to_remove.append(e)
+		for w in what_to_remove:
+			if w in processedpairs[p]:
+				#print("Removing " + w)
+				processedpairs[p].remove(w)
+				if len(processedpairs[p]) == 1:
+					#print("Only one left")
+					keys_to_pop.append(p)
+
+	for k in keys_to_pop:
+		#print("Deleting!")
+		#print(processedpairs[k])
+		processedpairs.pop(k)
+
+	#Clean out subdirectories of duplicate parent directories.
+	keys_to_pop=[]
+	for x in processedpairs:
+		for y in processedpairs:
+			if set(x).issubset(set(y)) and set(x) != set(y) and x != y:
+				keys_to_pop.append(x)
+
+	for k in keys_to_pop:
+		if k in processedpairs:
+			processedpairs.pop(k)
+
+	return processedpairs
+
+
+def gethostname():
+	hostname=socket.gethostname()
+
+	if "DIRDUP_HOSTNAME" in os.environ:
+		hostname=os.environ["DIRDUP_HOSTNAME"]
+
+	return hostname
+
+
+
+def getworkdir():
+	workdir="./"
+
+	if "DIRDUP_WORKDIR" in os.environ:
+		workdir=os.environ["DIRDUP_WORKDIR"]
+
+	return workdir
+
+
+# s must be in the form device:storage_name
+def getlocationforstorage(s):
+	device, storage_name = s.split(':')[0:2]
+
+	return open('accesses/' + device + '/' + device + '/' + storage_name, 'r').readlines()[0].rstrip('\n').lstrip("file:")
+
+
+# s must be in the form device:storage_name
+def getindexlocationforstorage(s):
+	device, storage_name = s.split(':')[0:2]
+
+	return 'indexes/' + device + '/' + storage_name
+
+
+def getallstorages():
+	allstorages=[]
+	for root, dirs, files in os.walk('accesses'):
+		devices=dirs[:]
+		for d in dirs:
+			dirs.pop(0)
+		for d in devices:
+			for rs, ds, fs in os.walk('accesses/' + d + '/' + d):
+				allstorages.extend([d + ':' + x for x in fs])
+
+	return allstorages
+
+def getstoragesforhost(d):
+	storages=[]
+	for rs, ds, fs in os.walk('accesses/' + d + '/' + d):
+		storages.extend([d + ':' + x for x in fs])
+
+	return storages
+
+def main(argv):
+
+	parser = argparse.ArgumentParser(
+	   description='Find duplicate elements in the dirdup indexes.'
+	)
+	parser.add_argument('--type', choices=['f','d'], default='f',
+	   help='finds duplicate files or directories (default: files)'
+	)
+	parser.add_argument('storages', default=['@ALL'], nargs='*',
+	   help='what storages to process (or @ALL or @LOCAL)'
+	)
+
+	args = parser.parse_args()
+
+	hostname=gethostname()
+
+	storages=set()
+	if '@ALL' in args.storages:
+		storages |= set(getallstorages())
+
+	if '@LOCAL' in args.storages:
+		storages |= set(getstoragesforhost(hostname))
+
+	storages |= set(set(args.storages) - {'@ALL', '@LOCAL'})
+
+
+	indexes={}
+	for s in storages:
+		indexlocation=getindexlocationforstorage(s)
+		if indexlocation not in indexes:
+			indexes[indexlocation]=tuple(s.split(':'))
+
+
+	workdir=getworkdir()
+
+	readdata=[]
+	for f in indexes:
+		for line in open(f, 'r'):
+			if (line != '\n'):
+				#print(line)
+				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
+				file_sections = fields[3].rpartition('/')
+				readdata.append((fields[0], fields[1], fields[2], file_sections[0], file_sections[2], indexes[f][0], indexes[f][1]))
+
+	if args.type == 'f':
+		duplicatefiles=identicalfiles(readdata)
+		for key in sorted(duplicatefiles, reverse=True):
+			print("%s (size=%d, mtime=%d) found in:" % (key[3], key[0], key[1]))
+			for s in sorted(duplicatefiles[key]):
+				print(":", s)
+
+#	elif args.type == 'd':
+#		duplicatedirs=dupdirs_wholetrees(readdata)
+#		print(duplicatedirs)
+#		for key in sorted(duplicatedirs, reverse=True, key=lambda x: sum(e[0] for e in x)):
+#			print(sorted(duplicatedirs[key]))
+
+
+
+
+main(sys.argv)
