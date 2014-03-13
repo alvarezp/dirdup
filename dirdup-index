@@ -74,7 +74,7 @@ def main(argv):
 		for f in files:
 			fn = root + '/' + f
 			try:
-				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn))
+				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn[len(seedpath)+1:]))
 			except FileNotFoundError:
 				pass
 
