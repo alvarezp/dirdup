@@ -79,6 +79,10 @@ def main(argv):
 				indexfile.flush()
 			except FileNotFoundError:
 				pass
+			except PermissionError:
+				pass
+			except OSError:
+				pass
 
 
 
