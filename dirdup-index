@@ -75,6 +75,7 @@ def main(argv):
 			fn = root + '/' + f
 			try:
 				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn[len(seedpath)+1:]))
+				indexfile.flush()
 			except FileNotFoundError:
 				pass
 
