@@ -73,6 +73,7 @@ def main(argv):
 	for root, dirs, files in os.walk(seedpath):
 		for f in files:
 			fn = root + '/' + f
+			print(fn[len(seedpath)+1:])
 			try:
 				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn[len(seedpath)+1:]))
 				indexfile.flush()
