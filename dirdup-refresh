@@ -125,6 +125,8 @@ def main(argv):
 				pass
 			except OSError:
 				pass
+			except UnicodeError:
+				pass
 
 	os.rename(indexfilename + '.refresh', indexfilename)
 
