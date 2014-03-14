@@ -72,10 +72,19 @@ def main(argv):
 		seedpath = '/'
 		reloffset=len(seedpath)
 
+	exceptionsfilename=workdir + 'exceptions/' + hostname + '/' + seedname
+	exceptions=[]
+	if os.path.isfile(exceptionsfilename):
+		for line in open(exceptionsfilename, 'r', newline="\n").readlines():
+			exceptions.append(seedpath + '/' + line.split('\n')[0].rstrip('/'))
+
 	mkdirs(indexfilepath)
 	indexfile=open(indexfilename, 'w')
 
 	for root, dirs, files in os.walk(seedpath):
+		for d in dirs:
+			if root + '/' + d in exceptions:
+				dirs.remove(d);
 		for f in files:
 			try:
 				fn = root + '/' + f
