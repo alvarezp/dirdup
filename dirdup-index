@@ -89,6 +89,10 @@ def main(argv):
 			try:
 				fn = root + '/' + f
 				print(fn[reloffset:])
+				if not os.path.exists(fn):
+					continue
+				if not os.path.isfile(fn):
+					continue
 				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn[reloffset:]))
 				indexfile.flush()
 			except IOError:
