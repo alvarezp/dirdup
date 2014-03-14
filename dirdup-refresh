@@ -4,6 +4,7 @@ import os
 import sys
 import socket
 import hashlib
+import re
 
 from os.path import getsize, join
 from functools import partial
@@ -41,6 +42,7 @@ def md5sum(filename):
 
 
 def main(argv):
+
 	if len(argv) < 2:
 		print("usage: dirdup-scan path")
 		return
@@ -78,9 +80,28 @@ def main(argv):
 		for line in open(exceptionsfilename, 'r', newline="\n").readlines():
 			exceptions.append(seedpath + '/' + line.split('\n')[0].rstrip('/'))
 
-	mkdirs(indexfilepath)
-	indexfile=open(indexfilename, 'w')
+	readdata={}
+	if os.path.isfile(indexfilename):
+		print("Reading previous index...")
+		for line in open(indexfilename, 'r'):
+			if (line != '\n'):
+				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
+				file_sections = fields[3].rpartition('/')
+				if fields[3] not in readdata:
+					readdata[fields[3]] = (fields[0], fields[1], fields[2], file_sections[0], file_sections[2], seedpath)
 
+	if os.path.isfile(indexfilename + '.refresh'):
+		print("Reading previous partial index...")
+		for line in open(indexfilename + '.refresh', 'r'):
+			if (line != '\n'):
+				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
+				file_sections = fields[3].rpartition('/')
+				readdata[fields[3]] = (fields[0], fields[1], fields[2], file_sections[0], file_sections[2], seedpath)
+
+	mkdirs(indexfilepath)
+	indexfilerefresh=open(indexfilename + '.refresh', 'w')
+
+	print("Ennumerating files and creating new index...")
 	for root, dirs, files in os.walk(seedpath):
 		for d in dirs:
 			if root + '/' + d in exceptions:
@@ -88,19 +109,24 @@ def main(argv):
 		for f in files:
 			try:
 				fn = root + '/' + f
-				print(fn[reloffset:])
+				key = fn[reloffset:]
+				file_mtime=int(os.stat(fn).st_mtime)
 				if not os.path.exists(fn):
 					continue
 				if not os.path.isfile(fn):
 					continue
-				indexfile.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, int(os.stat(fn).st_mtime), md5sum(fn), fn[reloffset:]))
-				indexfile.flush()
+				if key in readdata and file_mtime == int(readdata[key][1]):
+					indexfilerefresh.write("%11d %11s %32s  %s\n" % (int(readdata[key][0]), int(readdata[key][1]), readdata[key][2], key))
+				else:
+					print("Rehashing %s" % key)
+					indexfilerefresh.write("%11d %11s %32s  %s\n" % (os.stat(fn).st_size, file_mtime, md5sum(fn), key))
+				indexfilerefresh.flush()
 			except IOError:
 				pass
 			except OSError:
 				pass
 
-
+	os.rename(indexfilename + '.refresh', indexfilename)
 
 main(sys.argv)
 
