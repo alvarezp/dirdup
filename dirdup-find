@@ -52,18 +52,15 @@ def dupdirs_wholetrees(data):
 		dir_components=input_path.split('/')
 		path=""
 		for c in dir_components:
-			if c == "":
-				continue
-
-			if c == ".":
-				path="."
-			else:
+			if c != "." and c != "":
 				path=path + '/' + c
 
-			if (path not in dirs):
-				dirs[path]=[];
+			index=(line[5], line[6], path)
 
-			dirs[path].append((int(input_size), int(input_time), input_hash, input_file))
+			if (index not in dirs):
+				dirs[index]=[];
+
+			dirs[index].append((input_size, input_time, input_hash, input_file))
 
 	for d in dirs:
 		pairs.append((d, tuple(dirs[d])));
@@ -78,7 +75,7 @@ def dupdirs_wholetrees(data):
 		for d in processedpairs[p]:
 			for e in processedpairs[p]:
 				#print("Testing :" + d + ": against :" + e + ":")
-				if d in e and d != e:
+				if d[0] == e[0] and d[1] == e[1] and d[2] in e[2] and d[2] != e[2]:
 					#print("True!")
 					what_to_remove.append(e)
 		for w in what_to_remove:
@@ -95,15 +92,21 @@ def dupdirs_wholetrees(data):
 		processedpairs.pop(k)
 
 	#Clean out subdirectories of duplicate parent directories.
-	keys_to_pop=[]
-	for x in processedpairs:
-		for y in processedpairs:
-			if set(x).issubset(set(y)) and set(x) != set(y) and x != y:
-				keys_to_pop.append(x)
+#	keys_to_pop=[]
+#	for x in processedpairs:
+#		for y in processedpairs:
+#			if set(x).issubset(set(y)) and set(x) != set(y) and x != y:
+#				keys_to_pop.append(x)
+#	tprint("general deduplication")
 
-	for k in keys_to_pop:
-		if k in processedpairs:
-			processedpairs.pop(k)
+#	for k in keys_to_pop:
+#		if k in processedpairs:
+#			processedpairs.pop(k)
+#	tprint("general deduplication 2")
+
+	for k in processedpairs:
+		processedpairs[k] = [processedpairs[k], (sum([x[0] for x in k]),len(k))]
+
 
 	return processedpairs
 
@@ -211,12 +214,13 @@ def main(argv):
 			for s in sorted(duplicatefiles[key]):
 				print(":", s)
 
-#	elif args.type == 'dd':
-#		duplicatedirs=dupdirs_wholetrees(readdata)
-#		print(duplicatedirs)
-#		for key in sorted(duplicatedirs, reverse=True, key=lambda x: sum(e[0] for e in x)):
-#			print(sorted(duplicatedirs[key]))
-
+	elif args.type == 'dd':
+		duplicatedirs=dupdirs_wholetrees(readdata)
+		sorteddupdirs=sorted(duplicatedirs, reverse=True, key=lambda x: duplicatedirs[x][1][0]*duplicatedirs[x][1][1])
+		for key in sorteddupdirs:
+			print("Directory with duplicate content (size=%d in %d files) found:" % (duplicatedirs[key][1][0], duplicatedirs[key][1][1]))
+			for s in sorted(duplicatedirs[key][0]):
+				print(":", s)
 
 
 
