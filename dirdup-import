@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import socket
+import hashlib
+import re
+
+from os.path import getsize, join
+from functools import partial
+
+def mkdirs(target):
+	if not os.path.exists(target):
+		os.makedirs(target)
+
+
+def gethostname():
+	hostname=socket.gethostname()
+
+	if "DIRDUP_HOSTNAME" in os.environ:
+		hostname=os.environ["DIRDUP_HOSTNAME"]
+
+	return hostname
+
+
+
+def getworkdir():
+	workdir="./"
+
+	if "DIRDUP_WORKDIR" in os.environ:
+		workdir=os.environ["DIRDUP_WORKDIR"]
+
+	return workdir
+
+
+def md5sum(filename):
+	with open(filename, mode='rb') as f:
+		d = hashlib.md5()
+		for buf in iter(partial(f.read, 128), b''):
+			d.update(buf)
+	return d.hexdigest()
+
+
+def main(argv):
+
+	if len(argv) < 5:
+		print("usage: dirdup-import device storage_name path index_file")
+		return
+
+	if "--help" in argv:
+		print("usage: dirdup-import device storage_name path index_file")
+		return
+
+	hostname=gethostname()
+	workdir=getworkdir()
+
+	device, storage_name, path, prov_index_file = argv[1:]
+
+	storage_path=workdir + 'accesses/' + device + '/' + device + '/'
+	storage_file=storage_path + storage_name
+
+	indexfilepath=workdir + 'indexes/' + device + '/'
+	index_file=indexfilepath + storage_name
+
+	if os.path.exists(storage_file):
+		os.unlink(storage_file)
+
+	mkdirs(storage_path)
+
+	path=path.rstrip('/')
+	reloffset=len(path)+1
+
+	with open(storage_file, 'w', newline="\n") as storagestream:
+		seedpath=storagestream.write('file:' + path)
+
+	if path == '':
+		seedpath = '/'
+		reloffset=len(seedpath)
+
+	readdata={}
+	if os.path.isfile(prov_index_file):
+		print("Reading provided index...")
+		for line in open(prov_index_file, 'r'):
+			if (line != '\n'):
+				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
+				if fields[3] not in readdata:
+					readdata[fields[3]] = (fields[0], fields[1], fields[2], fields[3])
+
+	mkdirs(indexfilepath)
+	indexfilerefresh=open(index_file, 'w')
+
+	print("Creating new index from provided index...")
+	for r in readdata:
+			size, timestamp, md5hash, key = readdata[r][0:]
+			try:
+				indexfilerefresh.write("%11d %11s %32s  %s\n" % (int(readdata[key][0]), int(readdata[key][1]), readdata[key][2], key))
+				indexfilerefresh.flush()
+			except UnicodeError:
+				pass
+
+main(sys.argv)
+
