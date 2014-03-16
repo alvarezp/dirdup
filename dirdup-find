@@ -48,12 +48,7 @@ def dupdirs_wholetrees(data):
 
 	dirs={}
 	for line in data:
-		input_size=line[0]
-		input_time=line[1]
-		input_hash=line[2]
-		input_path=line[3]
-		input_file=line[4]
-		input_index=line[5]
+		input_size, input_time, input_hash, input_path, input_file, input_index=line[0:6]
 		dir_components=input_path.split('/')
 		path=""
 		for c in dir_components:
