@@ -200,12 +200,14 @@ def main(argv):
 
 	readdata=[]
 	for f in indexes:
-		for line in open(f, 'r'):
-			if (line != '\n'):
-				#print(line)
-				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
-				file_sections = fields[3].rpartition('/')
-				readdata.append((fields[0], fields[1], fields[2], file_sections[0], file_sections[2], indexes[f][0], indexes[f][1]))
+		for line in open(f, 'r').readlines():
+			if (line == '\n'):
+				continue
+			#print(line)
+			fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
+			file_sections = fields[3].rpartition('/')
+			readdata.append((int(fields[0]), int(fields[1]), fields[2], file_sections[0], file_sections[2], indexes[f][0], indexes[f][1]))
+
 
 	if args.type == 'ff':
 		duplicatefiles=identicalfiles(readdata)
