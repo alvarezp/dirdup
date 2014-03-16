@@ -165,8 +165,8 @@ def main(argv):
 	parser = argparse.ArgumentParser(
 	   description='Find duplicate elements in the dirdup indexes.'
 	)
-	parser.add_argument('--type', choices=['f','d'], default='f',
-	   help='finds duplicate files or directories (default: files)'
+	parser.add_argument('--type', choices=['f','d','ff','dd'], default='f',
+	   help='finds files, directories, dupfiles, or dupdirectories (default: files)'
 	)
 	parser.add_argument('storages', default=['@ALL'], nargs='*',
 	   help='what storages to process (or @ALL or @LOCAL)'
@@ -204,14 +204,14 @@ def main(argv):
 				file_sections = fields[3].rpartition('/')
 				readdata.append((fields[0], fields[1], fields[2], file_sections[0], file_sections[2], indexes[f][0], indexes[f][1]))
 
-	if args.type == 'f':
+	if args.type == 'ff':
 		duplicatefiles=identicalfiles(readdata)
 		for key in sorted(duplicatefiles, reverse=True):
 			print("%s (size=%d, mtime=%d) found in:" % (key[3], key[0], key[1]))
 			for s in sorted(duplicatefiles[key]):
 				print(":", s)
 
-#	elif args.type == 'd':
+#	elif args.type == 'dd':
 #		duplicatedirs=dupdirs_wholetrees(readdata)
 #		print(duplicatedirs)
 #		for key in sorted(duplicatedirs, reverse=True, key=lambda x: sum(e[0] for e in x)):
