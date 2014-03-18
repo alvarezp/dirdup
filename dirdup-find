@@ -52,8 +52,10 @@ def dupdirs_wholetrees(data):
 		dir_components=input_path.split('/')
 		path=""
 		for c in dir_components:
-			if c != "." and c != "":
+			if c != "." and path != "":
 				path=path + '/' + c
+			else:
+				path=c
 
 			index=(line[5], line[6], path)
 
