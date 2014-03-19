@@ -5,11 +5,14 @@ import sys
 import socket
 import hashlib
 import re
+import time
 
 from os.path import getsize, join
 from functools import partial
 
 import argparse
+
+l = 0
 
 def processpairs(pairs):
 	sortedpairs = sorted(pairs, key=lambda x: x[1], reverse=True);
@@ -41,6 +44,11 @@ def identicalfiles(data):
 
 	return processpairs(pairs)
 
+def tprint(msg):
+	return
+	global l
+	print("=== PROFILING === %s: %f" % (msg, time.time() - l))
+	l = time.time()
 
 def dupdirs_wholetrees(data):
 
