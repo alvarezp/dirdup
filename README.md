@@ -4,6 +4,26 @@ dirdup
 A duplicate finder across multiple systems. The project is incomplete. Help
 and patches are welcome.
 
+At this moment, version 0.0 has been released. This is just to prove the
+concept and let myself start working on my personal folders.
+
+The following 0.0.x versions should be more arbitrary changes for concept
+changes, etc. Commands and output may (and will) break.
+
+Proper development should start now to get to version 0.1 until we get to
+version 1.0.
+
+What's next:
+* Improve the index format to speed up its load time and make it friendlier
+  for Dropbox storage. Currently, each change implies the reupload of the
+  whole for a storage.
+* Fix the command-line API. Currently, command names and options were taken
+  on the fly, so, it's headed to being a mess.
+* Implement other possible uses, like locating files based on name and size.
+* Fix terminology. Use the words "storage" and "index" as opposed to previous
+  attempts like "seed" and fix term-consistency issues.
+* Rename the whole project and repo. Dirdup is an inconvenient name.
+
 
 How to use
 ==========
