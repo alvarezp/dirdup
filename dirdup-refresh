@@ -44,11 +44,11 @@ def md5sum(filename):
 def main(argv):
 
 	if len(argv) < 2:
-		print("usage: dirdup-scan path")
+		print("usage: dirdup-refresh path")
 		return
 
 	if "--help" in argv:
-		print("usage: dirdup-scan path")
+		print("usage: dirdup-refresh path")
 		return
 
 	hostname=gethostname()
