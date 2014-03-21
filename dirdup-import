@@ -5,6 +5,7 @@ import sys
 import socket
 import hashlib
 import re
+import gzip
 
 from os.path import getsize, join
 from functools import partial
@@ -80,20 +81,21 @@ def main(argv):
 	readdata={}
 	if os.path.isfile(prov_index_file):
 		print("Reading provided index...")
-		for line in open(prov_index_file, 'r'):
+		for l in gzip.open(prov_index_file + '.gz', 'rb'):
+			line = l.decode('utf-8')
 			if (line != '\n'):
 				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
 				if fields[3] not in readdata:
 					readdata[fields[3]] = (fields[0], fields[1], fields[2], fields[3])
 
 	mkdirs(indexfilepath)
-	indexfilerefresh=open(index_file, 'w')
+	indexfilerefresh=gzip.open(index_file + '.gz', 'wb')
 
 	print("Creating new index from provided index...")
 	for r in readdata:
 			size, timestamp, md5hash, key = readdata[r][0:]
 			try:
-				indexfilerefresh.write("%11d %11s %32s  %s\n" % (int(readdata[key][0]), int(readdata[key][1]), readdata[key][2], key))
+				indexfilerefresh.write(("%11d %11s %32s  %s\n" % (int(readdata[key][0]), int(readdata[key][1]), readdata[key][2], key)).encode('utf-8'))
 				indexfilerefresh.flush()
 			except UnicodeError:
 				pass

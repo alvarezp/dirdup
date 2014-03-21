@@ -5,6 +5,7 @@ import sys
 import socket
 import hashlib
 import re
+import gzip
 
 from os.path import getsize, join
 from functools import partial
@@ -81,9 +82,10 @@ def main(argv):
 			exceptions.append(seedpath + '/' + line.split('\n')[0].rstrip('/'))
 
 	readdata={}
-	if os.path.isfile(indexfilename):
+	if os.path.isfile(indexfilename + '.gz'):
 		print("Reading previous index...")
-		for line in open(indexfilename, 'r'):
+		for l in gzip.open(indexfilename + '.gz', 'rb'):
+			line = l.decode('utf-8')
 			if (line != '\n'):
 				fields=re.split(' +', line.rstrip('\n').lstrip(' '), 3)
 				file_sections = fields[3].rpartition('/')
@@ -128,7 +130,13 @@ def main(argv):
 			except UnicodeError:
 				pass
 
-	os.rename(indexfilename + '.refresh', indexfilename)
+	with open(indexfilename + '.refresh', 'rb') as f_in:
+		with gzip.open(indexfilename + '.refresh.gz', 'wb') as f_out:
+			f_out.writelines(f_in)
+
+	os.rename(indexfilename + '.refresh.gz', indexfilename + '.gz')
+
+	os.unlink(indexfilename + '.refresh')
 
 main(sys.argv)
 
