@@ -55,12 +55,18 @@ def main(argv):
 	hostname=gethostname()
 	workdir=getworkdir()
 
-	seedname=argv[1]
+	argument=argv[1]
 
-	seedfilepath=workdir + 'accesses/' + hostname + '/' + hostname + '/'
+	if ':' in argument:
+		targethostname, seedname = argument.split(':')[:]
+	else:
+		targethostname = hostname
+		seedname = argument
+
+	seedfilepath=workdir + 'accesses/' + hostname + '/' + targethostname + '/'
 	seedfilename=seedfilepath + seedname
 
-	indexfilepath=workdir + 'indexes/' + hostname + '/'
+	indexfilepath=workdir + 'indexes/' + targethostname + '/'
 	indexfilename=indexfilepath + seedname
 
 	if not os.path.exists(seedfilename):
@@ -75,7 +81,7 @@ def main(argv):
 		seedpath = '/'
 		reloffset=len(seedpath)
 
-	exceptionsfilename=workdir + 'exceptions/' + hostname + '/' + seedname
+	exceptionsfilename=workdir + 'exceptions/' + targethostname + '/' + seedname
 	exceptions=[]
 	if os.path.isfile(exceptionsfilename):
 		for line in open(exceptionsfilename, 'r', newline="\n").readlines():
