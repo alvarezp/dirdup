@@ -31,8 +31,7 @@ def getworkdir():
 
 def main(argv):
 	if len(argv) < 3:
-		print("usage: dirdup-add name path")
-		return
+		sys.exit("usage: dirdup-add name path")
 
 	if "--help" in argv:
 		print("usage: dirdup-add name path")
@@ -49,8 +48,7 @@ def main(argv):
 	seedfilename=seedfilepath + seedname
 
 	if os.path.exists(seedfilename):
-		print("Seed file already exists. Aborting.")
-		return
+		sys.exit("Seed file already exists. Aborting.")
 
 	with open(seedfilename, 'w') as seedfile:
 		seedfile.write("file:" + seedpath + "\n")
