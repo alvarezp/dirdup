@@ -54,7 +54,8 @@ def main(argv):
 		seedfile.write("file:" + seedpath + "\n")
 
 
-main(sys.argv)
+if __name__ == '__main__':
+	main(sys.argv)
 
 
 
